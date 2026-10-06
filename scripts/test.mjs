@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import vm from 'node:vm';
+import {handle} from '../worker/index.js';
+const page=await readFile('worker/page.html','utf8');new vm.Script(page.match(/<script>([\s\S]*?)<\/script>/)[1]);
+const post=(path,body,origin='https://test.local')=>new Request('https://test.local'+path,{method:'POST',headers:{'Content-Type':'application/json',origin},body:JSON.stringify(body)});
+assert.equal((await handle(new Request('https://test.local/'))).status,200);
+assert.deepEqual(await(await handle(new Request('https://test.local/api/status'))).json(),{ready:false});
+assert.equal((await handle(post('/api/chat',{messages:[]}))).status,503);
+assert.equal((await handle(post('/api/chat',{},'https://other.local'),{DASHSCOPE_API_KEY:'test'})).status,403);
+const original=globalThis.fetch;const calls=[];
+globalThis.fetch=async(url,options)=>{calls.push({url,body:options?.body?JSON.parse(options.body):null});if(url.includes('multimodal-generation'))return Response.json({output:{audio:{url:'https://test.oss-cn-beijing.aliyuncs.com/audio.wav'}}});if(url.includes('oss-cn'))return new Response(new Uint8Array([82,73,70,70]),{headers:{'Content-Type':'audio/wav'}});const body=JSON.parse(options.body);return Response.json({choices:[{message:{content:body.model==='qwen3-asr-flash'?'我今天有点累。':'听起来你今天消耗了不少力气。愿意聊聊发生了什么吗？'}}]});};
+const env={DASHSCOPE_API_KEY:'test'};
+assert.equal((await handle(post('/api/chat',{messages:[{role:'system',content:'unsafe'}]}),env)).status,400);
+assert.equal((await handle(post('/api/asr',{audio:'https://external.local/x'}),env)).status,400);
+const asr=await(await handle(post('/api/asr',{audio:'data:audio/wav;base64,UklGRg=='}),env)).json();assert.equal(asr.text,'我今天有点累。');assert.equal(calls.at(-1).body.asr_options.language,'zh');
+const chat=await(await handle(post('/api/chat',{messages:[{role:'user',content:asr.text}]}),env)).json();assert.ok(chat.text.includes('力气'));assert.equal(calls.at(-1).body.messages[0].role,'system');
+const tts=await handle(post('/api/tts',{text:chat.text}),env);assert.equal(tts.headers.get('Content-Type'),'audio/wav');assert.equal(calls.at(-2).body.input.language_type,'Chinese');assert.equal(calls.at(-2).body.input.voice,'Cherry');
+globalThis.fetch=async()=>new Response('',{status:429});assert.equal((await handle(post('/api/tts',{text:'你好'}),env)).status,502);
+globalThis.fetch=original;console.log('Passed: client syntax, service status, origin validation, request validation, ASR/chat/TTS contracts and provider errors (mocked).');
+
+const wavSource=page.slice(page.indexOf("function wav("),page.indexOf("async function startRecording")); const sandbox={Blob,Float32Array,ArrayBuffer,DataView};vm.createContext(sandbox);vm.runInContext(wavSource,sandbox);const wave=sandbox.wav([new Float32Array(48000).fill(.2)],48000);const wavView=new DataView(await wave.arrayBuffer());assert.equal(wave.size,32044);assert.equal(wavView.getUint32(24,true),16000);assert.equal(wavView.getUint16(22,true),1);assert.equal(wavView.getUint32(40,true),32000);console.log("Passed: 48 kHz input converts to 16 kHz mono PCM WAV.");

@@ -1,0 +1,1 @@
+{"name":"nuonuo-companion","private":true,"type":"module","scripts":{"dev":"node scripts/preview.mjs","build":"bash scripts/build.sh","test":"node scripts/test.mjs","validate":"node scripts/validate-artifact.mjs"}}

@@ -1,0 +1,9 @@
+dist/
+site.tar.gz
+
+.env*
+!.env.example
+
+.openai/
+node_modules/
+*.log
