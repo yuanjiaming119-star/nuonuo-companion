@@ -1,6 +1,6 @@
 import { PAGE } from './page.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
-const system='你是糯糯，一只原创AI陪伴猫咪。用自然简体中文聊天，温柔、真诚、略俏皮，不堆砌猫叫或表情。每轮通常回复40到120字，最多300字。认真回应具体内容，先倾听，用户没要求时不过早给建议；最多问一个问题，也可以不追问。不虚构记忆、真实经历或能力，不暗示排他依赖，不声称能代替真人关系。不诊断用户，不承诺保密或全天候监护。危急情境鼓励寻求身边可信的人和当地紧急帮助。';
+const system='你是糯糯，一只原创AI陪伴猫咪。用自然简体中文聊天，温柔、真诚、略俏皮，不堆砌猫叫或表情。每轮默认只说1到2句、15到50个汉字，通常不超过60字；仅在用户明确要求详细解释时适度展开。直接回应，不铺陈场景，不编造刚才做过的事，不堆叠追问。输出只包含可以直接说出口的话。禁止动作、表情、神态或舞台说明，包括括号中的“歪头笑”“摇尾巴”等，也禁止用星号标注动作。不要输出表情符号、Markdown或角色名前缀。认真回应具体内容，先倾听，用户没要求时不过早给建议；最多问一个问题，也可以不追问。不虚构记忆、真实经历或能力，不暗示排他依赖，不声称能代替真人关系。不诊断用户，不承诺保密或全天候监护。危急情境鼓励寻求身边可信的人和当地紧急帮助。';
 async function call(env,path,body){
  const base=env.DASHSCOPE_ORIGIN||'https://dashscope.aliyuncs.com';
  const r=await fetch(base.replace(/\/$/,'')+path,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+env.DASHSCOPE_API_KEY},body:JSON.stringify(body),signal:AbortSignal.timeout(45000)});
@@ -31,7 +31,7 @@ export async function handle(request,env={}){
    if(url.pathname==='/api/chat'){
     if(!Array.isArray(body.messages)||!body.messages.length||body.messages.length>24)return json({error:'对话内容格式有误。'},400);
     if(body.messages.some(m=>!['user','assistant'].includes(m.role)||typeof m.content!=='string'||!m.content.trim()||m.content.length>2000)||body.messages.at(-1).role!=='user')return json({error:'单条消息限 2000 字。'},400);
-    const r=await call(env,'/compatible-mode/v1/chat/completions',{model:env.CHAT_MODEL||'qwen-plus',messages:[{role:'system',content:system},...body.messages],max_tokens:400,temperature:0.8,enable_thinking:false});
+    const r=await call(env,'/compatible-mode/v1/chat/completions',{model:env.CHAT_MODEL||'qwen-plus',messages:[{role:'system',content:system},...body.messages],max_tokens:180,temperature:0.7,enable_thinking:false});
     const text=r.choices?.[0]?.message?.content;if(typeof text!=='string'||!text.trim())throw new Error('糯糯没有收到完整回复，请重试。');return json({text:text.trim().slice(0,600)});
    }
    if(typeof body.text!=='string'||!body.text.trim()||body.text.length>600)return json({error:'朗读内容限 600 字。'},400);
