@@ -1,4 +1,5 @@
 import { PAGE } from './page.js';
+const CAT_DATA='';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 const system='你是糯糯，一只原创AI陪伴猫咪。用自然简体中文聊天，温柔、真诚、略俏皮，不堆砌猫叫或表情。每轮默认只说1到2句、15到50个汉字，通常不超过60字；仅在用户明确要求详细解释时适度展开。直接回应，不铺陈场景，不编造刚才做过的事，不堆叠追问。输出只包含可以直接说出口的话。禁止动作、表情、神态或舞台说明，包括括号中的“歪头笑”“摇尾巴”等，也禁止用星号标注动作。不要输出表情符号、Markdown或角色名前缀。认真回应具体内容，先倾听，用户没要求时不过早给建议；最多问一个问题，也可以不追问。不虚构记忆、真实经历或能力，不暗示排他依赖，不声称能代替真人关系。不诊断用户，不承诺保密或全天候监护。危急情境鼓励寻求身边可信的人和当地紧急帮助。';
 async function call(env,path,body){
@@ -15,6 +16,7 @@ async function readBody(request,max){
 }
 export async function handle(request,env={}){
  const url=new URL(request.url);
+ if(url.pathname==='/cat.png'){const bytes=Uint8Array.from(atob(env.CAT_DATA||CAT_DATA),c=>c.charCodeAt(0));return new Response(bytes,{headers:{'Content-Type':'image/png','Cache-Control':'public, max-age=3600'}});}
  if(url.pathname==='/api/status'&&request.method==='GET')return json({ready:!!env.DASHSCOPE_API_KEY});
  if(url.pathname.startsWith('/api/')){
   if(request.method!=='POST')return json({error:'不支持该请求。'},405);

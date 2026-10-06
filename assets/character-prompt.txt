@@ -1,0 +1,1 @@
+Built-in image_gen; transparent background. Reference: user supplied orange cat image. Prompt: fluffy chubby orange tabby kitten, glossy brown eyes, cream muzzle and belly, green leaf hat with dew, blue waistcoat, front-facing full-body cutout, cinematic 3D fur, warm soft daylight, no scenery or text.

@@ -2,6 +2,7 @@ FROM node:24-alpine
 WORKDIR /app
 COPY package.json ./
 COPY worker ./worker
+COPY assets ./assets
 COPY scripts/preview.mjs ./scripts/preview.mjs
 ENV HOST=0.0.0.0
 ENV PORT=8080
